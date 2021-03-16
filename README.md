@@ -5,7 +5,7 @@ This is a prototype implementation of DEX for Ethereum using Solidity. The techn
 
 The goals of CoinSwap (based on the constant circle model) is to reduce the slippage cost. The implementation is based on the Uniswap V2 architecture and framework. During our implementation of the CoinSwap protocol, we found out that some of our modules could be used
 to reduce the gas cost for Uniswap V2. Our optimized Uniswap V2 was included in the file 
-[uniswap-v2-periphery-optimized.zip](https://github.com/coinswapapp/CoinSwap-Core/blob/main/uniswap-v2-periphery-optimized.zip). After you unzip the file, you can run the following command to test the gas cost:
+[uniswap-v2-periphery-optimized.zip](https://github.com/coinswapapp/coinswap-smart-contracts/raw/main/uniswap-v2-periphery-optimized.zip). After you unzip the file, you can run the following command to test the gas cost:
 - yarn install (or npm install)
 - yarn test
 
