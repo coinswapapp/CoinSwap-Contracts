@@ -32,15 +32,18 @@ The following are the smart contracts addresses of the smart contracts:
 
 - CoinSwapFactory: 0x12ee90f9b476f1808544c1e8abe1266d95e5e613 (Ethereum mainnet)
 - CoinSwapRouter: 0xc6edc0703b7f20dc184f72c0621700a8d872c9b3 (Ethereum mainnet)
--  CoinSwapFactory: 0x095122e22f45624c5a3cf3f6a1eda6a0be813aef (BSC mainnet)
--  Wrapped BNB: 0x33af73aa6aaea0bd8a237758f14b4c341d7b251b (BSC mainnet)
--  CoinSwapRouter: 0x6ca292a38c13718c763110ea159c9ed2b9dd2b88 (BSC mainnet)
--  CoinSwapFactory: 0x2abfc7d35abdb3b1c1b1722db56224c3d781311c (OKchain testnet)
--  Wrapped OKT: 0x6d0acfe5cfabb2cf5dd55b85c82db18cd6d1fb57 (OKchain testnet)
--  CoinSwapRouter: 0x095122e22f45624c5a3cf3f6a1eda6a0be813aef (OKchain testnet)
--  CoinSwapFactory: 0x6834464C558B3EE784703F44903467Cd2558b0f0 (HECO testnet)
--  WHT: 0x2AbFC7D35ABdB3b1C1B1722dB56224C3d781311c (HECO testnet)
--  CoinSwapRouter: 0x8aCe3e9aD87Bd171B281d800F9bbB78d73ae9cc7 (HECO testnet)
+- 
+- CoinSwapFactory: 0x095122e22f45624c5a3cf3f6a1eda6a0be813aef (BSC mainnet)
+- Wrapped BNB: 0x33af73aa6aaea0bd8a237758f14b4c341d7b251b (BSC mainnet)
+- CoinSwapRouter: 0x6ca292a38c13718c763110ea159c9ed2b9dd2b88 (BSC mainnet)
+- 
+- CoinSwapFactory: 0x2abfc7d35abdb3b1c1b1722db56224c3d781311c (OKchain testnet)
+- Wrapped OKT: 0x6d0acfe5cfabb2cf5dd55b85c82db18cd6d1fb57 (OKchain testnet)
+- CoinSwapRouter: 0x095122e22f45624c5a3cf3f6a1eda6a0be813aef (OKchain testnet)
+- 
+- CoinSwapFactory: 0x6834464C558B3EE784703F44903467Cd2558b0f0 (HECO testnet)
+- Wrapped HT: 0x2AbFC7D35ABdB3b1C1B1722dB56224C3d781311c (HECO testnet)
+- CoinSwapRouter: 0x8aCe3e9aD87Bd171B281d800F9bbB78d73ae9cc7 (HECO testnet)
 
 The UI could be accessed at:
 
