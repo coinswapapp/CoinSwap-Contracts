@@ -1,4 +1,4 @@
-# coinswap-smart-contracts
+# CoinSwap Contracts
 
 This is a prototype implementation of DEX for Ethereum using Solidity. The technique is based on Dr. Wang's paper: 
 [Automated Market Makers for Decentralized Finance (DeFi)](https://arxiv.org/pdf/2009.01676.pdf) 
