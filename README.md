@@ -2,7 +2,7 @@
 
 **We are a very small academic team with very limited resources/budgets. Donations of ETH/BNB/HT and other tokens are strongly recommended
 so that we can use these tokens as gas for creating pairs (deploying contracts) on these chains. Our address for all compatible chains
-(ETH/BNB/HT etc): 0x03ae62FD5e08Fa57682a73d2fB1259525cd7b324 **
+(ETH/BNB/HT etc): 0x03ae62FD5e08Fa57682a73d2fB1259525cd7b324**
 
 This is a prototype implementation of DEX for Ethereum using Solidity. The technique is based on Dr. Wang's paper: 
 [Automated Market Makers for Decentralized Finance (DeFi)](https://arxiv.org/pdf/2009.01676.pdf) 
