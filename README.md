@@ -28,7 +28,7 @@ The above comparison shows that CoinSwap has less gas cost than the optimized Un
 
 We should note the following comparison from https://hackmd.io/@HaydenAdams/HJ9jLsfTz for other swap gas cost.
 
-The following are the smart contracts addresses of the smart contracts:
+The following are the deployed smart contract addresses:
 
 - CoinSwapFactory: 0x12ee90f9b476f1808544c1e8abe1266d95e5e613 (Ethereum mainnet)
 - CoinSwapRouter: 0xc6edc0703b7f20dc184f72c0621700a8d872c9b3 (Ethereum mainnet)
