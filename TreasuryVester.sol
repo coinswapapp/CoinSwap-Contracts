@@ -45,7 +45,7 @@ contract TreasuryVester {
         require(block.timestamp >= vestingCliff, 'TreasuryVester::claim: not time yet');
         uint amount;
         if (block.timestamp >= vestingEnd) {
-            amount = ICSWP(cswp).balanceOf(address(this));
+            amount = ICSWPToken(cswp).balanceOf(address(this));
         } else {
             uint claimPeriod = block.timestamp - lastUpdate;
             uint z = vestingAmount*claimPeriod;
@@ -53,11 +53,11 @@ contract TreasuryVester {
             amount = z/(vestingEnd - vestingBegin);
             lastUpdate = block.timestamp;
         }
-        ICSWP(cswp).transfer(recipient, amount);
+        ICSWPToken(cswp).transfer(recipient, amount);
     }
 }
 
-interface ICSWP {
+interface ICSWPToken {
     function balanceOf(address account) external view returns (uint);
     function transfer(address dst, uint rawAmount) external returns (bool);
 }
