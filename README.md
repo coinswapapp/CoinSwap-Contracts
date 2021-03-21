@@ -1,9 +1,5 @@
 # CoinSwap Contracts
 
-**We are a very small academic team with very limited resources/budgets. Donations of ETH/BNB/HT and other tokens are strongly recommended
-so that we can use these tokens as gas for creating pairs (deploying contracts) on these chains. Our address for all compatible chains
-(ETH/BNB/HT etc): 0x03ae62FD5e08Fa57682a73d2fB1259525cd7b324**
-
 This is a prototype implementation of DEX for Ethereum using Solidity. The technique is based on Dr. Wang's paper: 
 [Automated Market Makers for Decentralized Finance (DeFi)](https://arxiv.org/pdf/2009.01676.pdf) 
 
@@ -36,10 +32,12 @@ The following are the smart contracts addresses of the smart contracts:
 
 - CoinSwapFactory: 0x12ee90f9b476f1808544c1e8abe1266d95e5e613 (Ethereum mainnet)
 - CoinSwapRouter: 0xc6edc0703b7f20dc184f72c0621700a8d872c9b3 (Ethereum mainnet)
+- CSWP Governance Token: 0xC882CCD810f0ce07FeaE297260F474FA7F6c7999 (Ethereum mainnet)
 - 
 - CoinSwapFactory: 0x095122e22f45624c5a3cf3f6a1eda6a0be813aef (BSC mainnet)
 - Wrapped BNB: 0x33af73aa6aaea0bd8a237758f14b4c341d7b251b (BSC mainnet)
 - CoinSwapRouter: 0x6ca292a38c13718c763110ea159c9ed2b9dd2b88 (BSC mainnet)
+- CSWP Governance Token: 0x00ad91fB399eDa6223Dc387e792fdD7a35E16337 (BSC mainnet)
 - 
 - CoinSwapFactory: 0x2abfc7d35abdb3b1c1b1722db56224c3d781311c (OKchain testnet)
 - Wrapped OKT: 0x6d0acfe5cfabb2cf5dd55b85c82db18cd6d1fb57 (OKchain testnet)
