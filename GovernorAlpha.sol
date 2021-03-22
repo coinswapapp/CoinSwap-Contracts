@@ -31,7 +31,6 @@ contract GovernorAlpha {
         uint againstVotes;
         bool canceled;
         bool executed;
-        //mapping (address => Receipt) receipts; // Receipts of ballots for the entire set of voters
     }
     struct Receipt {
         bool hasVoted; // Whether or not a vote has been cast
@@ -130,7 +129,6 @@ contract GovernorAlpha {
 
     function getReceipt(uint proposalId, address voter) public view returns (Receipt memory) {
         return receipts[voter][proposalId];
-        //return proposals[proposalId].receipts[voter];
     }
 
     function getblockNumber() public view returns (uint dd) {
@@ -190,7 +188,6 @@ contract GovernorAlpha {
     function _castVote(address voter, uint proposalId, bool support) internal {
         require(state(proposalId) == ProposalState.Active, "CSWP-Gov:12");
         Proposal storage proposal = proposals[proposalId];
-        //Receipt storage receipt = proposal.receipts[voter];
         Receipt storage receipt = receipts[voter][proposalId];
         require(receipt.hasVoted == false, "CSWP-Gov:13");
         uint votes = cswp.getPriorVotes(voter, proposal.startBlock);
