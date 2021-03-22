@@ -1,32 +1,6 @@
 // SPDX-License-Identifier: TBD
 pragma solidity 0.7.4;
 
-interface IBEP20 {
-    event Transfer(address indexed from, address indexed to, uint256 value);
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-    function name() external view returns (string memory);
-    function symbol() external view returns (string memory);
-    function decimals() external view returns (uint8);
-    function totalSupply() external view returns (uint);
-    function balanceOf(address account) external view returns (uint);
-    function allowances(address _owner, address spender) external view returns (uint);
-    function approve(address spender, uint value) external returns (bool);
-    function transfer(address to, uint value) external returns (bool);
-    function transferFrom(address from, address to, uint value) external returns (bool);    
-}
-
-interface ICoinSwapGovBEP20 is IBEP20 {
-    function owner() external view returns (address payable);
-    function nonces(address account) external view returns (uint);
-    function permit(address _from, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
-    function DOMAIN_SEPARATOR() external view returns (bytes32);
-    function DOMAIN_TYPEHASH() external pure returns (bytes32);
-    function PERMIT_TYPEHASH() external view returns (bytes32);
-    function DELEGATION_TYPEHASH() external pure returns (bytes32);
-    function renounceOwner() external;
-    function setNewOwner(address payable newOwner) external;
-}
-
 library SafeMath {
     function add(uint256 a, uint256 b) internal pure returns (uint256) {
         uint256 c = a + b;
@@ -43,116 +17,26 @@ library SafeMath {
     }
 }
 
-contract CoinSwapGovBEP20 is ICoinSwapGovBEP20 {
-    using SafeMath for uint256;
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-    mapping(address => uint256) public override balanceOf;
-    mapping(address => mapping(address => uint256)) public override allowances;
-    address payable public override owner;
-    uint256 public override totalSupply;
-    string public constant override name = 'CoinSwap Governance';
-    string public constant override symbol= 'CSWP';
-    uint8 public constant override decimals = 18;
-    bytes32 public constant override DOMAIN_TYPEHASH = keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)');
-    bytes32 public constant override PERMIT_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
-    bytes32 public constant override DELEGATION_TYPEHASH = keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
-    bytes32 public override DOMAIN_SEPARATOR;
-    mapping (address => uint) public override nonces;
-
-    constructor() {
-        uint chainId;
-        assembly { chainId := chainid() }
-        DOMAIN_SEPARATOR = keccak256(
-            abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)),keccak256(bytes('1')), chainId, address(this))
-        );
-    }
-
-    function renounceOwner() public override {
-        require(owner == msg.sender, 'BEP20: requires owner');
-        owner = address(0);
-        emit OwnershipTransferred(owner, address(0));
-    }
-    function setNewOwner(address payable newOwner) public override {
-        require((owner == msg.sender) && (newOwner != address(0)), 'BEP20: requires owner or new owner is zero');
-        owner = newOwner;
-        emit OwnershipTransferred(owner, newOwner);
-    }
-
-    function transfer(address recipient, uint256 amount) public override returns (bool) {
-        _transfer(msg.sender, recipient, amount);
-        return true;
-    }
-
-    function approve(address spender, uint256 amount) public override returns (bool) {
-        _approve(msg.sender, spender, amount);
-        return true;
-    }
-    function transferFrom(address sender,address recipient,uint256 amount) public override returns (bool) {
-        _transfer(sender, recipient, amount);
-        _approve(sender, msg.sender, allowances[sender][msg.sender].sub(amount, 'BEP20: transfer amount > allowance'));
-        return true;
-    }
-    function increaseAllowance(address spender, uint256 addedValue) public returns (bool) {
-        _approve(msg.sender, spender, allowances[msg.sender][spender].add(addedValue));
-        return true;
-    }
-    function decreaseAllowance(address spender, uint256 subtractedValue) public returns (bool) {
-        _approve(msg.sender, spender,
-            allowances[msg.sender][spender].sub(subtractedValue, 'BEP20: decreased allowance below zero'));
-        return true;
-    }
-    function _transfer(address sender,address recipient,uint256 amount) internal {
-        require((sender != address(0)) && (recipient != address(0)), 'BEP20: transfer with zero address');
-        balanceOf[sender] = balanceOf[sender].sub(amount, 'BEP20: transfer amount exceeds balance');
-        balanceOf[recipient] = balanceOf[recipient].add(amount);
-        emit Transfer(sender, recipient, amount);
-    }
-    function _mint(address account, uint256 amount) internal {
-        require(account != address(0), 'BEP20: mint to zero address');
-        totalSupply = totalSupply.add(amount);
-        balanceOf[account] = balanceOf[account].add(amount);
-        emit Transfer(address(0), account, amount);
-    }
-    function _burn(address account, uint256 amount) internal {
-        require(account != address(0), 'BEP20: burn from the zero address');
-        balanceOf[account] = balanceOf[account].sub(amount, 'BEP20: burn amount exceeds balance');
-        totalSupply = totalSupply.sub(amount);
-        emit Transfer(account, address(0), amount);
-    }
-    function _approve(address _owner,address spender,uint256 amount) internal {
-        require((_owner != address(0)) &&( spender != address(0)), 'BEP20: approve with zero address');
-        allowances[_owner][spender] = amount;
-        emit Approval(_owner, spender, amount);
-    }
-    function _burnFrom(address account, uint256 amount) internal {
-        _burn(account, amount);
-        _approve(account,msg.sender,allowances[account][msg.sender].sub(amount, 'BEP20: burn amount exceeds allowance'));
-    }
-
-    function permit(address sender, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external override {
-        require(deadline >= block.timestamp, 'BEP20: expired');
-        bytes32 digest = keccak256(
-            abi.encodePacked(
-                '\x19\x01',
-                DOMAIN_SEPARATOR,
-                keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[sender]++, deadline))
-            )
-        );
-        address recoveredAddress = ecrecover(digest, v, r, s);
-        require(recoveredAddress != address(0) && recoveredAddress == sender, 'BEP20: wrong signature');
-        _approve(sender, spender, value);
-    }
-}
-
-contract CSWPToken is CoinSwapGovBEP20 {
-    using SafeMath for uint256;
+contract CSWPToken {
+    using SafeMath for uint;
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
     event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
     event DelegateVotesChanged(address indexed delegate, uint previousBalance, uint newBalance);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
-    constructor() {owner = tx.origin;}
-
-    mapping (address => address) internal _delegates;
+    string public constant name = 'CoinSwap Governance';
+    string public constant symbol= 'CSWP';
+    uint8 public constant decimals = 18;
+    mapping (address => uint) public nonces;
+    uint public totalSupply = 1_000_000_000e18; // initial 1 billion CSWP
+    uint public mintingAllowedAfter;
+    uint32 public constant minimumTimeBetweenMints = 1 days * 365;
+    uint8 public constant mintCap = 2;
+    mapping(address => uint256) public balanceOf;
+    mapping(address => mapping(address => uint256)) public allowance;
+    address payable public owner;
+    mapping (address => address) public delegates;
     struct Checkpoint {
         uint32 fromBlock;
         uint256 votes;
@@ -160,14 +44,99 @@ contract CSWPToken is CoinSwapGovBEP20 {
     mapping (address => mapping (uint32 => Checkpoint)) public checkpoints;
     mapping (address => uint32) public numCheckpoints;
 
-    function mint(address _to, uint256 _amount) public {
-        require(owner == msg.sender, 'BEP20: not owner');
-        _mint(_to, _amount);
-        _moveDelegates(address(0), _delegates[_to], _amount);
+
+    bytes32 public constant DOMAIN_TYPEHASH = keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)');
+    bytes32 public constant PERMIT_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+    bytes32 public constant DELEGATION_TYPEHASH = keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
+    bytes32 public DOMAIN_SEPARATOR;
+
+    constructor() {
+        owner = tx.origin;
+        balanceOf[tx.origin] = totalSupply; // initial 1 billion 
+        mintingAllowedAfter = block.timestamp;
+        uint chainId;
+        assembly { chainId := chainid() }
+        DOMAIN_SEPARATOR = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)),keccak256(bytes('1')), chainId, address(this)));
     }
 
-    function delegates(address delegator) external view returns (address) {
-        return _delegates[delegator];
+    function setNewOwner(address payable newOwner) public {//renounce owner by setting newOwner = 0
+        require(owner == msg.sender, 'ERC20: requires owner');
+        owner = newOwner;
+        emit OwnershipTransferred(owner, newOwner);
+    }
+
+    function mint(address dst, uint amount) external {
+        require(owner == msg.sender, 'CSWP: not owner');
+        require(block.timestamp >= mintingAllowedAfter, "CSWP: minting not allowed yet");
+        require(dst != address(0), "CSWP: cannot transfer to the zero address");
+
+        mintingAllowedAfter = block.timestamp + minimumTimeBetweenMints;
+        require(amount <= (totalSupply * mintCap)/100, "CSWP: exceeded mint cap"); 
+        totalSupply = totalSupply+amount;
+        balanceOf[dst] = balanceOf[dst] + amount;
+        emit Transfer(address(0), dst, amount);
+        _moveDelegates(address(0), delegates[dst], amount);
+    }
+
+    function allowances(address account, address spender) external view returns (uint) {
+        return allowance[account][spender];
+    }
+
+    function burn(address from, uint value) external {
+        balanceOf[from] = balanceOf[from].sub(value);
+        totalSupply = totalSupply.sub(value);
+        _moveDelegates(delegates[from], address(0), value);
+        emit Transfer(from, address(0), value);
+    }
+
+    function approve(address spender, uint amount) external returns (bool) {
+        require(amount <= balanceOf[msg.sender]);
+        allowance[msg.sender][spender] = amount;
+        emit Approval(msg.sender, spender, amount);
+        return true;
+    }
+
+    function permit(address sender, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external {
+        require(deadline >= block.timestamp, 'ERC20: expired');
+        require(value <= balanceOf[sender]);
+        bytes32 digest = keccak256(
+            abi.encodePacked('\x19\x01',DOMAIN_SEPARATOR,keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[sender]++, deadline))
+            )
+        );
+        address recoveredAddress = ecrecover(digest, v, r, s);
+        require(recoveredAddress != address(0) && recoveredAddress == sender, 'ERC20: wrong signature');
+        allowance[sender][spender] = value;
+        emit Approval(sender, spender, value);
+    }
+
+    function _transfer(address from, address to, uint value) private {
+        balanceOf[from] = balanceOf[from].sub(value);
+        balanceOf[to] = balanceOf[to].add(value);
+        _moveDelegates(delegates[from], delegates[to], value);
+        emit Transfer(from, to, value);
+    }
+
+    function transfer(address to, uint value) external returns (bool) {
+        _transfer(msg.sender, to, value);
+        return true;
+    }
+
+    function transferFrom(address from, address to, uint value) external returns (bool) {
+        if (msg.sender != from) {
+            uint newAllowance = allowance[from][msg.sender].sub(value);
+            allowance[from][msg.sender] = newAllowance;
+            emit Approval(from, msg.sender, newAllowance);
+        }
+        _transfer(from, to, value);
+        return true;
+    }
+
+    function _delegate(address delegator, address delegatee) internal {
+        address currentDelegate = delegates[delegator];
+        uint delegatorBalance = balanceOf[delegator];
+        delegates[delegator] = delegatee;
+        emit DelegateChanged(delegator, currentDelegate, delegatee);
+        _moveDelegates(currentDelegate, delegatee, delegatorBalance);
     }
 
     function delegate(address delegatee) external {
@@ -216,14 +185,6 @@ contract CSWPToken is CoinSwapGovBEP20 {
             }
         }
         return checkpoints[account][lower].votes;
-    }
-
-    function _delegate(address delegator, address delegatee) internal {
-        address currentDelegate = _delegates[delegator];
-        uint256 delegatorBalance = balanceOf[delegator]; 
-        _delegates[delegator] = delegatee;
-        emit DelegateChanged(delegator, currentDelegate, delegatee);
-        _moveDelegates(currentDelegate, delegatee, delegatorBalance);
     }
 
     function _moveDelegates(address srcRep, address dstRep, uint256 amount) internal {
