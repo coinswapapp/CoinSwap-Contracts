@@ -131,10 +131,6 @@ contract GovernorAlpha {
         return proposals[proposalId].receipts[voter];
     }
 
-    function getblockNumber() public view returns (uint dd) {
-        dd=block.number;
-    }
-
     function state(uint proposalId) public view returns (ProposalState) {
         require(proposalCount >= proposalId && proposalId >= 0, "CSWP-Gov:10");
         Proposal storage proposal = proposals[proposalId];
@@ -194,8 +190,10 @@ contract GovernorAlpha {
 
         if (support) {
             proposal.forVotes += votes;
+            require(proposal.forVotes >= votes, "CSWP-Gov:16");
         } else {
             proposal.againstVotes += votes;
+            require(proposal.againstVotes >= votes, "CSWP-Gov:16");
         }
         receipt.hasVoted = true;
         receipt.support = support;
