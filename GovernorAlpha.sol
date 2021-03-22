@@ -31,13 +31,13 @@ contract GovernorAlpha {
         uint againstVotes;
         bool canceled;
         bool executed;
+        mapping (address => Receipt) receipts; // Receipts of ballots for the entire set of voters
     }
     struct Receipt {
         bool hasVoted; // Whether or not a vote has been cast
         bool support;
         uint votes;
     }
-    mapping (address => mapping (uint => Receipt)) receipts;
     enum ProposalState {
         Pending,
         Active,
@@ -68,14 +68,14 @@ contract GovernorAlpha {
     function propose(address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas, string memory description) public returns (uint pID) {
         require(cswp.getPriorVotes(msg.sender, block.number - 1) > proposalThreshold(), "CSWP-Gov:01");
         require(targets.length == values.length && targets.length == signatures.length && targets.length == calldatas.length, "CSWP-Gov:02");
-        require(targets.length != 0, "GovernorAlpha: must provide actions");
-        require(targets.length <= proposalMaxOperations(), "GovernorAlpha: too many actions");
+        require(targets.length != 0, "CSWP-Gov:03");
+        require(targets.length <= proposalMaxOperations(), "CSWP-Gov:04");
 
         uint latestProposalId = latestProposalIds[msg.sender];
         if (latestProposalId != 0) {
           ProposalState proposersLatestProposalState = state(latestProposalId);
-          require(proposersLatestProposalState != ProposalState.Active, "CSWP-Gov:03");
-          require(proposersLatestProposalState != ProposalState.Pending, "CSWP-Gov:04");
+          require(proposersLatestProposalState != ProposalState.Active, "CSWP-Gov:05");
+          require(proposersLatestProposalState != ProposalState.Pending, "CSWP-Gov:06");
         }
         proposals.push();
         pID = proposalCount;
@@ -98,7 +98,7 @@ contract GovernorAlpha {
     }
 
     function queue(uint proposalId) public {
-        require(state(proposalId) == ProposalState.Succeeded, "CSWP-Gov:05");
+        require(state(proposalId) == ProposalState.Succeeded, "CSWP-Gov:07");
         Proposal storage proposal = proposals[proposalId];
         proposal.eta = block.timestamp + timelock.delay();
         for (uint i = 0; i < proposal.targets.length; i++) {
@@ -108,12 +108,12 @@ contract GovernorAlpha {
     }
 
     function _queueOrRevert(address target, uint value, string memory signature, bytes memory data, uint eta) internal {
-        require(!timelock.queuedTransactions(keccak256(abi.encode(target, value, signature, data, eta))), "CSWP-Gov:06");
+        require(!timelock.queuedTransactions(keccak256(abi.encode(target, value, signature, data, eta))), "CSWP-Gov:08");
         timelock.queueTransaction(target, value, signature, data, eta);
     }
 
     function execute(uint proposalId) public payable {
-        require(state(proposalId) == ProposalState.Queued, "CSWP-Gov:07");
+        require(state(proposalId) == ProposalState.Queued, "CSWP-Gov:09");
         Proposal storage proposal = proposals[proposalId];
         proposal.executed = true;
         for (uint i = 0; i < proposal.targets.length; i++) {
@@ -128,7 +128,7 @@ contract GovernorAlpha {
     }
 
     function getReceipt(uint proposalId, address voter) public view returns (Receipt memory) {
-        return receipts[voter][proposalId];
+        return proposals[proposalId].receipts[voter];
     }
 
     function getblockNumber() public view returns (uint dd) {
@@ -136,7 +136,7 @@ contract GovernorAlpha {
     }
 
     function state(uint proposalId) public view returns (ProposalState) {
-        require(proposalCount >= proposalId && proposalId >= 0, "CSWP-Gov:08");
+        require(proposalCount >= proposalId && proposalId >= 0, "CSWP-Gov:10");
         Proposal storage proposal = proposals[proposalId];
         if (proposal.canceled) {
             return ProposalState.Canceled;
@@ -159,10 +159,10 @@ contract GovernorAlpha {
 
     function cancel(uint proposalId) public {
         ProposalState stateOfId = state(proposalId);
-        require(stateOfId != ProposalState.Executed, "CSWP-Gov:09");
+        require(stateOfId != ProposalState.Executed, "CSWP-Gov:11");
 
         Proposal storage proposal = proposals[proposalId];
-        require(cswp.getPriorVotes(proposal.proposer, block.number-1) < proposalThreshold(), "CSWP-Gov:10");
+        require(cswp.getPriorVotes(proposal.proposer, block.number-1) < proposalThreshold(), "CSWP-Gov:12");
 
         proposal.canceled = true;
         for (uint i = 0; i < proposal.targets.length; i++) {
@@ -181,23 +181,21 @@ contract GovernorAlpha {
         bytes32 structHash = keccak256(abi.encode(BALLOT_TYPEHASH, proposalId, support));
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
         address signatory = ecrecover(digest, v, r, s);
-        require(signatory != address(0), "CSWP-Gov:11");
+        require(signatory != address(0), "CSWP-Gov:13");
         return _castVote(signatory, proposalId, support);
     }
 
     function _castVote(address voter, uint proposalId, bool support) internal {
-        require(state(proposalId) == ProposalState.Active, "CSWP-Gov:12");
+        require(state(proposalId) == ProposalState.Active, "CSWP-Gov:14");
         Proposal storage proposal = proposals[proposalId];
-        Receipt storage receipt = receipts[voter][proposalId];
-        require(receipt.hasVoted == false, "CSWP-Gov:13");
+        Receipt storage receipt = proposal.receipts[voter];
+        require(receipt.hasVoted == false, "CSWP-Gov:15");
         uint votes = cswp.getPriorVotes(voter, proposal.startBlock);
 
         if (support) {
             proposal.forVotes += votes;
-            require(proposal.forVotes>votes, 'CSWP-Gov:14');
         } else {
             proposal.againstVotes += votes;
-            require(proposal.againstVotes>votes, 'CSWP-Gov:15');
         }
         receipt.hasVoted = true;
         receipt.support = support;
