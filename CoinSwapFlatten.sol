@@ -57,18 +57,10 @@ contract CoinSwapERC20 is ICoinSwapERC20 {
 
     constructor() {
         uint chainId;
-        assembly {
-            chainId := chainid()
-        }
+        assembly {chainId := chainid() }
         DOMAIN_SEPARATOR = keccak256(
-            abi.encode(
-                keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'),
-                keccak256(bytes(name)),
-                keccak256(bytes('1')),
-                chainId,
-                address(this)
-            )
-        );
+            abi.encode(keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'),
+                keccak256(bytes(name)), keccak256(bytes('1')), chainId, address(this) ) );
     }
 
     function _mint(address to, uint value) internal {
@@ -114,13 +106,8 @@ contract CoinSwapERC20 is ICoinSwapERC20 {
 
     function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external override {
         require(deadline >= block.timestamp, 'CSWP:01');
-        bytes32 digest = keccak256(
-            abi.encodePacked(
-                '\x19\x01',
-                DOMAIN_SEPARATOR,
-                keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))
-            )
-        );
+        bytes32 digest = keccak256(abi.encodePacked('\x19\x01', DOMAIN_SEPARATOR,
+                keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline)) ) );
         address recoveredAddress = ecrecover(digest, v, r, s);
         require(recoveredAddress != address(0) && recoveredAddress == owner, 'CSWP:02');
         _approve(owner, spender, value);
@@ -149,11 +136,10 @@ contract CoinSwapPair is CoinSwapERC20  {
     
     constructor() {factory = msg.sender; patron=tx.origin;}
     function initialize(address _token0, address _token1, uint224 circle) external  {
-        //circle needs to in order of token0<token1
         require(circleData == 0, 'CSWP:2');
         token0 = _token0;
         token1 = _token1;
-        circleData = circle;  // validity of circle should be checked by CoinSwapFactory
+        circleData = circle;  
     }
 
     function ICO(uint224 _circleData)  external  {
@@ -192,8 +178,7 @@ contract CoinSwapPair is CoinSwapERC20  {
         _mu =  uint56(1)+uint56(((10**32)*Z) / X2pY2);
         circleData = (_circleData & 0xFF_FFFFFFFFFFFFFF_FFFFFFFFFFFFFF_FFFF_FFFF_FFFF_00000000000000) | uint224(_mu);
     }
-
-    // update reserves and, on the first call per block, price accumulators
+    
     function _update(uint balance) private {
 	    uint32 lastTime = uint32(balance);	
         uint32 deltaTime = uint32(block.timestamp) -lastTime ;
@@ -275,7 +260,6 @@ contract CoinSwapPair is CoinSwapERC20  {
         emit Burn(msg.sender, amount, to); 
     }
 
-    // this low-level function should be called from a contract which performs important safety checks
     function swap(uint amountOut, address to, bytes calldata data) external  lock {       
         uint amount0Out = (amountOut >> 96); 
         uint amount1Out = uint(uint96(amountOut));
@@ -283,7 +267,7 @@ contract CoinSwapPair is CoinSwapERC20  {
         uint balance1;
         uint _circleData = circleData;
 
-        { // avoids stack too deep errors
+        { 
             address _token0 = token0;
             address _token1 = token1;
             require((to != _token0) && (to != _token1), 'CSWP:9');
@@ -298,7 +282,7 @@ contract CoinSwapPair is CoinSwapERC20  {
         uint amountIn0;
         uint amountIn1;
         uint224 _reserve = reserve;
-        {// if _reserve0 < amountOut, then should have been reverted above already, so no need to check here 
+        { 
             uint96 reserve0 = uint96(_reserve >>128);
             uint96 reserve1 = uint96(_reserve >>32);
             amountIn0 = balance0 + amount0Out - reserve0;
@@ -325,9 +309,7 @@ contract CoinSwapFactory {
     address payable public feeToSetter;
     mapping(address => mapping(address => address)) public getPair;
     address[] public allPairs;
-
     event PairCreated(address indexed token0, address indexed token1, address pair, uint);
-
     constructor(address payable _feeToSetter) {
         feeToSetter = _feeToSetter;
         feeTo = _feeToSetter;
@@ -358,7 +340,7 @@ contract CoinSwapFactory {
     }
     
     function setFeeTo(address payable _feeTo) external {
-	    require(msg.sender == feeToSetter, 'CSWP:21');
+	require(msg.sender == feeToSetter, 'CSWP:21');
         feeTo = _feeTo;
     }
 
@@ -450,13 +432,8 @@ contract CoinSwapRouterV1 {
         IWETH(WETH).deposit{value: amtETH}();
         assert(IWETH(WETH).transfer(pair, amtETH));
         liquidity = CoinSwapPair(pair).mint(to);
-        // refund dust eth, if any
         if (msg.value > amtETH) TransferHelper.safeTransferETH(msg.sender, msg.value - amtETH);
     }
-
-    // **** REMOVE LIQUIDITY **** 
-    // For OCI market, we do not have specific remove liquidity function
-    // but one can remove a pair by providing OCI-ed addresses
        function removeLiquidity(
         address tokenA,
         address tokenB,
@@ -523,7 +500,6 @@ contract CoinSwapRouterV1 {
         (amountToken, amountETH) = removeLiquidityETH(token, liquidity, amountTokenMin, amountETHMin, to, deadline);
     }
     
-    // **** REMOVE LIQUIDITY (supporting fee-on-transfer tokens) ****
     function removeLiquidityETHSupportingFeeOnTransferTokens(
         address token,
         uint liquidity,
@@ -665,20 +641,16 @@ contract CoinSwapRouterV1 {
         IWETH(WETH).deposit{value: amounts[0]}();
         assert(IWETH(WETH).transfer(CoinSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]));
         _swap(amounts, path, to);
-        // refund dust eth, if any
         if (msg.value > amounts[0]) TransferHelper.safeTransferETH(msg.sender, msg.value - amounts[0]);
     }
-
-    // **** SWAP (supporting fee-on-transfer tokens) ****
-    // requires the initial amount to have already been sent to the first pair
+    
     function _swapSupportingFeeOnTransferTokens(address[] memory path, address _to) internal virtual {
         for (uint i; i < path.length - 1; i++) {
             (address input, address output) = (path[i], path[i + 1]);
             CoinSwapPair pair = CoinSwapPair(CoinSwapLibrary.pairFor(factory, input, output));
             uint amountInput;
             uint amountOutput;
-            { // scope to avoid stack too deep errors
-	    
+            { 
 	    (uint reserveInput, uint reserveOutput, uint mulambda) = CoinSwapLibrary.getReservesAndmu(factory, input, output);
             amountInput = IERC20(input).balanceOf(address(pair)).sub(reserveInput);
             amountOutput = CoinSwapLibrary.getAmountOut(amountInput, reserveInput, reserveOutput, mulambda);
@@ -766,16 +738,12 @@ contract CoinSwapRouterV1 {
     }
 }
 
-
-
-// helper methods for interacting with ERC20 tokens and sending ETH that do not consistently return true/false
 library TransferHelper {
     function safeApprove(
         address token,
         address to,
         uint256 value
     ) internal {
-        // bytes4(keccak256(bytes('approve(address,uint256)')));
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x095ea7b3, to, value));
         require(success && (data.length == 0 || abi.decode(data, (bool))), 'CSWP70');
     }
@@ -785,7 +753,6 @@ library TransferHelper {
         address to,
         uint256 value
     ) internal {
-        // bytes4(keccak256(bytes('transfer(address,uint256)')));
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, value));
         require(success && (data.length == 0 || abi.decode(data, (bool))), 'CSWP71');
     }
@@ -796,7 +763,6 @@ library TransferHelper {
         address to,
         uint256 value
     ) internal {
-        // bytes4(keccak256(bytes('transferFrom(address,address,uint256)')));
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x23b872dd, from, to, value));
         require(success && (data.length == 0 || abi.decode(data, (bool))), 'CSWP72');
     }
@@ -809,16 +775,11 @@ library TransferHelper {
 
 library CoinSwapLibrary {
     using SafeMath for uint;
-
-    // calculates the CREATE2 address for a pair without making any external calls
     function pairFor(address factory, address tokenA, address tokenB) internal pure returns (address pair) {
         (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
-        pair = address(uint(keccak256(abi.encodePacked(
-                hex'ff',
-                factory,
+        pair = address(uint(keccak256(abi.encodePacked(hex'ff',factory,
                 keccak256(abi.encodePacked(token0, token1)),
-                hex'08d6ace72c919d3777e7a6a0ae82941b79932ea4e7b37e16d8c04f7fd2783574'
-            ))));
+                hex'08d6ace72c919d3777e7a6a0ae82941b79932ea4e7b37e16d8c04f7fd2783574' ))));
     }
 
     function getReservesAndmu(address factory, address tokenA, address tokenB) internal view returns 
@@ -832,7 +793,6 @@ library CoinSwapLibrary {
 	      (reserve0,reserve1, (mulambda0<<128) | mulambda1 ):(reserve1,reserve0, (mulambda1<<128) | mulambda0);
     }
 
-    // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
     function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint mulambda) internal pure returns (uint amountOut) {
         require((amountIn > 0) && (reserveOut > 0), 'CSWP:63');
 	    uint mulambda0 = (mulambda>>128);
