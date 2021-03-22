@@ -1,14 +1,16 @@
 //SPDX-License-Identifier: TBD
-//adapted from https://github.com/Uniswap/uniswap-v2-periphery/blob/master/contracts/UniswapV2Router02.sol
 pragma solidity =0.7.4;
 
 import './CoinSwapFactory.sol';
-import './libraries/TransferHelper.sol';
-import './libraries/CoinSwapLibrary.sol';
-import './libraries/SafeMath.sol';
-import './interfaces/IERC20.sol';
-import './interfaces/IWETH.sol';
- 
+
+
+
+interface IWETH {
+    function deposit() external payable;
+    function transfer(address to, uint value) external returns (bool);
+    function withdraw(uint) external;
+}
+
 contract CoinSwapRouterV1 { 
     using SafeMath for uint;
     address public immutable factory;
@@ -31,7 +33,7 @@ contract CoinSwapRouterV1 {
         address tokenB,
         uint amountADesired,
         uint amountBDesired,
-        uint amountAMin,
+        uint amountAMin, 
         uint amountBMin,
         uint224 circle //lambda0/lambda1 in circle needs in order of token0<token1 
     ) internal virtual returns (uint amountA, uint amountB, address pairForAB) {
@@ -110,7 +112,6 @@ contract CoinSwapRouterV1 {
         address pair = CoinSwapLibrary.pairFor(factory, tokenA, tokenB);
         CoinSwapPair(pair).transferFrom(msg.sender, pair, liquidity); // send liquidity to pair
         uint192 amount = CoinSwapPair(pair).burn(to);
-
         (amountA, amountB) = tokenA < tokenB ? (uint(amount>>96), uint(uint96(amount))) : (uint(uint96(amount)), uint(amount>>96));
         require((amountA >= amtAMin) && (amountB >= amtBMin), 'CSWP:33');
     }
@@ -208,7 +209,6 @@ contract CoinSwapRouterV1 {
 
     // **** SWAP ****
     // requires the initial amount to have already been sent to the first pair
-    //SWAP requires OCI-ed addresses
     function _swap(uint[] memory amounts, address[] memory path, address _to) internal virtual {
         for (uint i; i < path.length - 1; i++) {
             (address input, address output) = (path[i], path[i + 1]);
@@ -406,5 +406,123 @@ contract CoinSwapRouterV1 {
 
     function getAmountsIn(uint amountOut, address[] memory path) public view returns (uint[] memory amounts) {
         return CoinSwapLibrary.getAmountsIn(factory, amountOut, path);
+    }
+}
+
+
+
+// helper methods for interacting with ERC20 tokens and sending ETH that do not consistently return true/false
+library TransferHelper {
+    function safeApprove(
+        address token,
+        address to,
+        uint256 value
+    ) internal {
+        // bytes4(keccak256(bytes('approve(address,uint256)')));
+        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x095ea7b3, to, value));
+        require(success && (data.length == 0 || abi.decode(data, (bool))), 'CSWP70');
+    }
+
+    function safeTransfer(
+        address token,
+        address to,
+        uint256 value
+    ) internal {
+        // bytes4(keccak256(bytes('transfer(address,uint256)')));
+        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, value));
+        require(success && (data.length == 0 || abi.decode(data, (bool))), 'CSWP71');
+    }
+
+    function safeTransferFrom(
+        address token,
+        address from,
+        address to,
+        uint256 value
+    ) internal {
+        // bytes4(keccak256(bytes('transferFrom(address,address,uint256)')));
+        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x23b872dd, from, to, value));
+        require(success && (data.length == 0 || abi.decode(data, (bool))), 'CSWP72');
+    }
+
+    function safeTransferETH(address to, uint256 value) internal {
+        (bool success, ) = to.call{value: value}(new bytes(0));
+        require(success, 'CSWP73');
+    }
+}
+
+library CoinSwapLibrary {
+    using SafeMath for uint;
+
+    // calculates the CREATE2 address for a pair without making any external calls
+    function pairFor(address factory, address tokenA, address tokenB) internal pure returns (address pair) {
+        (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
+        pair = address(uint(keccak256(abi.encodePacked(
+                hex'ff',
+                factory,
+                keccak256(abi.encodePacked(token0, token1)),
+                hex'08d6ace72c919d3777e7a6a0ae82941b79932ea4e7b37e16d8c04f7fd2783574'
+            ))));
+    }
+
+    function getReservesAndmu(address factory, address tokenA, address tokenB) internal view returns 
+                                        (uint reserveA, uint reserveB, uint mulambda) {
+        (uint224 reserve, uint224 circleData) = CoinSwapPair(pairFor(factory, tokenA, tokenB)).getReserves();
+        uint reserve0 = uint(reserve>>128);
+        uint reserve1 = uint(uint96(reserve>>32));
+        uint mulambda0 = uint(uint16(circleData >> 72))* uint56(circleData >> 160) * uint56(circleData);
+        uint mulambda1 = uint(uint16(circleData >> 56))* uint56(circleData >> 104) * uint56(circleData);
+        (reserveA, reserveB, mulambda) = tokenA < tokenB ?
+	      (reserve0,reserve1, (mulambda0<<128) | mulambda1 ):(reserve1,reserve0, (mulambda1<<128) | mulambda0);
+    }
+
+    // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
+    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint mulambda) internal pure returns (uint amountOut) {
+        require((amountIn > 0) && (reserveOut > 0), 'CSWP:63');
+	    uint mulambda0 = (mulambda>>128);
+	    uint mulambda1 = uint(uint128(mulambda));
+        uint Z = 10**37-(mulambda0 * reserveIn * 1000);
+        uint R0=Z*Z;
+        Z= 10**37-(mulambda1 * reserveOut * 1000);
+        R0 += Z*Z;
+        uint ZZ = uint(10**37).sub(mulambda0 * (1000*reserveIn + amountIn * 997));  
+        R0 = R0.sub(ZZ*ZZ);  
+        R0 = SQRT.sqrt(R0);
+        amountOut = R0.sub(Z) / (mulambda1 * 1000);
+	    if (amountOut > reserveOut) amountOut = reserveOut;
+    }
+
+    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut, uint mulambda) internal pure returns (uint amountIn) {
+        uint mulambda0 = (mulambda>>128);
+	    uint mulambda1 = uint(uint128(mulambda));
+        uint Z= 10**37-(mulambda1 * reserveOut * 1000);
+        uint R1 = Z*Z;
+	    Z = 10**37-(mulambda0 * reserveIn * 1000);
+        R1 += Z*Z;
+        uint ZZ = 10**37-(mulambda1 * 1000* (reserveOut.sub(amountOut)));  
+	    R1 =R1.sub(ZZ*ZZ); 
+        amountIn = 1+ (Z.sub(SQRT.sqrt(R1))) / (mulambda0 * 997) ; 
+    }
+
+    function getAmountsOut(address factory, uint amountIn, address[] memory path) 
+            internal view returns (uint[] memory amounts) {
+        require(path.length >= 2, 'CSWP:65');
+        amounts = new uint[](path.length);
+        amounts[0] = amountIn;
+        for (uint i; i < path.length - 1; i++) {
+            (uint reserveIn, uint reserveOut, uint mulambda) 
+                = getReservesAndmu(factory, path[i], path[i + 1]);
+            amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut, mulambda);
+        }
+    }
+
+    function getAmountsIn(address factory, uint amountOut, address[] memory path) internal view returns (uint[] memory amounts) {
+        require(path.length >= 2, 'CSWP:66');
+        amounts = new uint[](path.length);
+        amounts[amounts.length - 1] = amountOut;
+        for (uint i = path.length - 1; i > 0; i--) {
+            (uint reserveIn, uint reserveOut, uint mulambda) 
+                = getReservesAndmu(factory, path[i-1], path[i]);
+            amounts[i - 1] = getAmountIn(amounts[i], reserveIn, reserveOut, mulambda);
+        }
     }
 }
