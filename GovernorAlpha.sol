@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: TBD
-pragma solidity ^0.7.4;
+pragma solidity ^0.8.3;
 pragma experimental ABIEncoderV2;
 
 // adapted from FROM https://github.com/compound-finance/compound-protocol/blob/master/contracts/Governance/GovernorAlpha.sol
