@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: TBD
-pragma solidity 0.7.4;
+pragma solidity 0.8.3;
 
 library SafeMath {
     function add(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -35,7 +35,7 @@ contract CSWPToken {
     uint8 public constant mintCap = 2;
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
-    address payable public owner;
+    address public owner;
     mapping (address => address) public delegates;
     struct Checkpoint {
         uint32 fromBlock;
