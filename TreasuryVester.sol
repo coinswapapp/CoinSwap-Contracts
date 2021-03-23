@@ -1,6 +1,6 @@
 //SPDX-License-Identifier: TBD
 //adapted from https://github.com/Uniswap/governance/blob/master/contracts/TreasuryVester.sol
-pragma solidity ^0.7.4;
+pragma solidity ^0.8.3;
 
 contract TreasuryVester {
     address public cswp;
