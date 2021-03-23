@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: TBD
-pragma solidity ^0.7.4;
+pragma solidity ^0.8.3;
 
 // adapted from https://github.com/compound-finance/compound-protocol/blob/master/contracts/Timelock.sol
 
