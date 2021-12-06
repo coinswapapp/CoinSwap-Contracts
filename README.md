@@ -14,7 +14,7 @@ You may just copy the gastest.spec.ts file to the original [uniswap-v2-periphery
 The following is a coparison of the gas cost for Original Uniswap V2, Optimized Uniswap V2, Curve Finance, and our Coinswap
 
  function() | Uniswap V2  | Optimized Uniswap V2 | Curve Finance (balanced) | Curve Finance (imbalanced) | CoinSwap | GAS Saving (over Uniswap V2)
- ------------- | -------------|-------------|-------|-----
+ ------------- | -------------|-------------|-------------|-------------|-------|-----
 mine() | 141106  | 132205 | 55798 (Y) | 55798 (Y) | 109759 | 22.2414%
 swap() | 89894  | 88101 | || 89343 | 0.6074%
 swap() (first transaction each block) | 101910 |99889| | | 96216|5.5107%
