@@ -21,7 +21,7 @@ swap() (first transaction each block) | 101910 |99889| | | 96216|5.5107%
 addLiquidity | 216512|207163|517639 | 411805 |185368 | 14.3502%
 removeLiquidity | 98597|97329|254592| 506064| 67137 | 31.9178%
 addLiquidity (ETH/WETH) | 223074|213725|||191953 |13.9178%
-full removeLiquidity (ETH/WETH) | 122071 |||122061|98815 | 19.8915%
+full removeLiquidity (ETH/WETH) | 122071 |122061|||98815 | 19.8915%
 partial removeLiquidity (ETH/WETH) | 180355|137071|||144235 | 20.0006%
 
 The above comparison shows that CoinSwap has less gas cost than the optimized Uniswap V2.The major application of CoinSwap is for relatively stable digital properties such as stable coins. 
