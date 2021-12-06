@@ -11,18 +11,18 @@ to reduce the gas cost for Uniswap V2. Our optimized Uniswap V2 was included in 
 
 You may just copy the gastest.spec.ts file to the original [uniswap-v2-periphery](https://github.com/Uniswap/uniswap-v2-periphery) folder to test the origianl gas cost for Uniswap V2 (note that you may need to increase the initial token number in the shared/fixtures.ts).
 
-The following is a coparison of the gas cost for Original Uniswap V2, Optimized Uniswap V2, and our Coinswap
+The following is a coparison of the gas cost for Original Uniswap V2, Optimized Uniswap V2, Curve Finance, and our Coinswap
 
- function() | Uniswap V2  | Optimized Uniswap V2 | CoinSwap | GAS Saving (over Uniswap V2)
+ function() | Uniswap V2  | Optimized Uniswap V2 | Curve Finance (balanced) | Curve Finance (imbalanced) | CoinSwap | GAS Saving (over Uniswap V2)
  ------------- | -------------|-------------|-------|-----
-mine() | 141106  | 132205 | 109759 | 22.2414%
-swap() | 89894  | 88101 |89343 | 0.6074%
-swap() (first transaction each block) | 101910 |99889|96216|5.5107%
-addLiquidity | 216512|207163|185368 | 14.3502%
-removeLiquidity | 98597|97329|67137 | 31.9178%
-addLiquidity (ETH/WETH) | 223074|213725|191953 |13.9178%
-full removeLiquidity (ETH/WETH) | 122071 |122061|98815 | 19.8915%
-partial removeLiquidity (ETH/WETH) | 180355|137071|144235 | 20.0006%
+mine() | 141106  | 132205 | 55798 (Y) | 55798 (Y) | 109759 | 22.2414%
+swap() | 89894  | 88101 | || 89343 | 0.6074%
+swap() (first transaction each block) | 101910 |99889| | | 96216|5.5107%
+addLiquidity | 216512|207163|517639 | 411805 |185368 | 14.3502%
+removeLiquidity | 98597|97329|254592| 506064| 67137 | 31.9178%
+addLiquidity (ETH/WETH) | 223074|213725|||191953 |13.9178%
+full removeLiquidity (ETH/WETH) | 122071 |||122061|98815 | 19.8915%
+partial removeLiquidity (ETH/WETH) | 180355|137071|||144235 | 20.0006%
 
 The above comparison shows that CoinSwap has less gas cost than the optimized Uniswap V2.The major application of CoinSwap is for relatively stable digital properties such as stable coins. 
 
