@@ -49,7 +49,7 @@ The following are the deployed smart contract addresses:
 
 The UI could be accessed at:
 
-1. http://coinswapapp.io/ (Ethereum mainnet)
-2. http://bsccoinswap.io/ (BSC mainnet)
-3. http://okcoinswap.io/ (OK testnet)
-4. http://hecocoinswap.io/ (HECO testnet)
+1. http://coinswapapp.io/ (or http://quantumca.org/ethcoinswap ) (Ethereum mainnet)
+2. http://quantumca.org/bsccoinswap (BSC mainnet)
+3. http://quantumca.org/okcoinswap (OK testnet)
+4. http://quantumca.org/hecocoinswap (HECO testnet)
